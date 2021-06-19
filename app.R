@@ -216,21 +216,25 @@ server <- function(input, output) {
 
     })
 
-
-
-    # define function to look up company names in donations database
-    search_func <- function(x){
-      temp <- donations[stringr::str_detect(donations$DonorName, fixed(x, ignore_case=TRUE)),] %>%
-        select(RegulatedEntityName, DonorName, Value, DonationType, AcceptedDate, ReportedDate)
-      temp$DonorName <- gsub(toupper(x), paste0("<mark><b>", toupper(x), "</b></mark>"), toupper(temp$DonorName))
-      return(temp)
-           }
-
-    # apply
     results3 <- reactive({
-        temp <- lapply(X=c(input$ind_name, company_names()), FUN=search_func)
-        do.call("rbind", temp)
+      search_terms <- c(input$ind_name, company_names())
+      search_terms_regex <- paste(search_terms, collapse="|")
+      temp <- donations[stringr::str_detect(toupper(donations$DonorName), toupper(search_terms_regex)),]
+      matches <- stringr::str_extract_all(tolower(temp$DonorName), tolower(search_terms_regex))
+      temp <- temp %>% select(RegulatedEntityName, DonorName, Value, DonationType, AcceptedDate, ReportedDate)
+
+      for (i in 1:length(matches)){
+        for (j in 1:length(matches[[i]])){
+          temp$DonorName[i] <- stringr::str_replace_all(toupper(temp$DonorName[i]),
+                                                          toupper(matches[[i]][j]),
+                                                          paste0("<mark>", toupper(matches[[i]][j]), "</mark>"))
+        }
+      }
+
+      return(temp)
     })
+
+
 
      # render results as table
       output$donations_results <- DT::renderDataTable({
@@ -269,26 +273,35 @@ server <- function(input, output) {
       ##########################
 
       # define function to look up company names in donations database
-      search_func4 <- function(x){
-        temp <- mp_interests[stringr::str_detect(mp_interests$Description, fixed(x, ignore_case=TRUE)),]
-        temp$Description <- gsub(toupper(x), paste0("<mark><b>", toupper(x), "</b></mark>"), toupper(temp$Description))
-        return(temp)
-      }
+
 
       # apply
       results4 <- reactive({
-        temp <- lapply(X=c(input$ind_name, company_names()), FUN=search_func4)
-        temp2 <- do.call("rbind", temp)
-        temp2$Register_date <- substr(temp2$URL_end, 1, 6)
-        temp2$Name <- str_match(temp2$URL_end, "\\/\\s*(.*?)\\s*\\.")[,2]
-        temp2$Name1 <- str_split_fixed(temp2$Name, "_", n=2)[,2] %>% str_to_title()
-        temp2$Name2 <- str_split_fixed(temp2$Name, "_", n=2)[,1] %>% str_to_title()
-        temp2$MP <- paste0(temp2$Name1, " ", temp2$Name2)
-        temp2$URL <- paste0("https://www.publications.parliament.uk/pa/cm/cmregmem/", temp2$URL_end)
-        temp2$URL <- paste0("<a target='_blank' href=", temp2$URL, ">Link</a>")
-        temp2 <- temp2 %>% select(MP, Party, URL, Description)
-        rownames(temp2) <- NULL
-        return(temp2)
+        search_terms <- c(input$ind_name, company_names())
+        search_terms_regex <- paste(search_terms, collapse="|")
+
+        temp <- mp_interests[stringr::str_detect(toupper(mp_interests$Description), toupper(search_terms_regex)),]
+
+        matches <- stringr::str_extract_all(tolower(temp$Description), tolower(search_terms_regex))
+
+        for (i in 1:length(matches)){
+          for (j in 1:length(matches[[i]])){
+            temp$Description[i] <- stringr::str_replace_all(toupper(temp$Description[i]),
+                                                            toupper(matches[[i]][j]),
+                                                            paste0("<mark><b>", toupper(matches[[i]][j]), "</mark></b>"))
+          }
+        }
+
+        temp$Register_date <- substr(temp$URL_end, 1, 6)
+        temp$Name <- str_match(temp$URL_end, "\\/\\s*(.*?)\\s*\\.")[,2]
+        temp$Name1 <- str_split_fixed(temp$Name, "_", n=2)[,2] %>% str_to_title()
+        temp$Name2 <- str_split_fixed(temp$Name, "_", n=2)[,1] %>% str_to_title()
+        temp$MP <- paste0(temp$Name1, " ", temp$Name2)
+        temp$URL <- paste0("https://www.publications.parliament.uk/pa/cm/cmregmem/", temp$URL_end)
+        temp$URL <- paste0("<a target='_blank' href=", temp$URL, ">Link</a>")
+        temp <- temp %>% select(MP, Party, URL, Description)
+        rownames(temp) <- NULL
+        return(temp)
       })
 
 
