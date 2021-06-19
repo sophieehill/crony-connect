@@ -117,10 +117,10 @@ ui <- fluidPage(
 
 server <- function(input, output) {
 
+    # save Companies House API Key as "mkey"
+    # loading from an untracked source file for privacy
+    source("api_key.R")
 
-
-
-    mkey <- "2o_3Jar_scUk6Uxefp-ArOuNymv5OHwbEEyK5jRC"
 
     # run code if button is clicked
     results <- eventReactive(input$button, {
