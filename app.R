@@ -119,8 +119,10 @@ server <- function(input, output) {
 
     # save Companies House API Key as "mkey"
     # loading from an untracked source file for privacy
+    # get your own API key (for free!) by creating an account
+    # and registering an "application" here:
+    # https://developer-specs.company-information.service.gov.uk/guides/authorisation
     source("api_key.R")
-
 
     # run code if button is clicked
     results <- eventReactive(input$button, {
