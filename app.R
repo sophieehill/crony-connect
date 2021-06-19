@@ -1,6 +1,9 @@
 #########################
 # load shiny packages
 #########################
+# required packages:
+# c("shiny", "bsplus", "dplyr", "tibble", "data.table", "DT",
+# "shinycssloaders", "stringr", "fst")
 library(shiny)
 library(bsplus) # for pop-up tooltip
 # usually i would load 'tidyverse'
@@ -121,11 +124,16 @@ ui <- fluidPage(
 server <- function(input, output) {
 
     # save Companies House API Key as "mkey"
-    # loading from an untracked source file for privacy
-    # get your own API key (for free!) by creating an account
+    # N.B. it is not good practice to paste your
+    # API keys in public code! :0
+    # But I can't figure out how to make the repo public except
+    # for this one file...
+    # Anyway, if you want to run your own searches, get your
+    # own API key (for free!) by creating an account
     # and registering an "application" here:
     # https://developer-specs.company-information.service.gov.uk/guides/authorisation
-    source("api_key.R")
+  mkey <- "2o_3Jar_scUk6Uxefp-ArOuNymv5OHwbEEyK5jRC"
+
 
     # run code if button is clicked
     results <- eventReactive(input$button, {
