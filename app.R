@@ -41,8 +41,8 @@ ui <- fluidPage(
     sidebarLayout(
 
         sidebarPanel(
-        HTML("<p>Crony Connect allows you to identify politically-connected individuals, using data from <a href='https://find-and-update.company-information.service.gov.uk/'>Companies House</a> and the <a href='http://search.electoralcommission.org.uk/?currentPage=1&rows=10&sort=AcceptedDate&order=desc&tab=1&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&prePoll=false&postPoll=true&register=gb&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'>Electoral Commission</a>.</p>"),
-        HTML("<p>Searching for this information manually can be time-consuming, since an individual may use various corporate entities to funnel donations. <b>Crony Connect</b> helps to speed up this process.</p>"),
+        HTML("<p>Crony Connect allows you to identify politically-connected individuals, using data from <a target='_blank' href='https://find-and-update.company-information.service.gov.uk/'>Companies House</a>, the <a target='_blank' href='http://search.electoralcommission.org.uk/?currentPage=1&rows=10&sort=AcceptedDate&order=desc&tab=1&et=pp&et=ppm&et=tp&et=perpar&et=rd&isIrishSourceYes=true&isIrishSourceNo=true&prePoll=false&postPoll=true&register=gb&register=ni&register=none&optCols=Register&optCols=CampaigningName&optCols=AccountingUnitsAsCentralParty&optCols=IsSponsorship&optCols=IsIrishSource&optCols=RegulatedDoneeType&optCols=CompanyRegistrationNumber&optCols=Postcode&optCols=NatureOfDonation&optCols=PurposeOfVisit&optCols=DonationAction&optCols=ReportedDate&optCols=IsReportedPrePoll&optCols=ReportingPeriodName&optCols=IsBequest&optCols=IsAggregation'>Electoral Commission</a> and the <a target='_blank' href='https://www.parliament.uk/mps-lords-and-offices/standards-and-financial-interests/parliamentary-commissioner-for-standards/registers-of-interests/register-of-members-financial-interests/'>MP's Register of Financial Interests</a>.</p>"),
+        HTML("<p>How does it work? When you enter the name of an individual, <b>Crony Connect</b> looks for any companies linked to that individual in the Companies House database. Then it searches for the individual <em>and any of their associated companies</em> in the donations and financial interests databases.</p>"),
         p("We entered some info already — click 'Search' to see the results!"),
             textInput("ind_name", "Name of individual", value="Andrew Feldman") %>%
           shinyInput_label_embed(
@@ -67,7 +67,10 @@ ui <- fluidPage(
                                          "October" = 10,
                                          "November" = 11,
                                          "December" = 12), selected=2),
-            actionButton("button", "Search")
+            actionButton("button", "Search"),
+        br(),
+        br(),
+        HTML("<em><p>Thanks to <a target='_blank' href='https://twitter.com/SmithMatt90'>Matthew Smith</a> for creating an R wrapper for the Companies House API, and to <a target='_blank' href='https://twitter.com/MPInterests'>Members Interests</a> for creating an API for the register.</em>")
         ),
 
         mainPanel(
