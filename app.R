@@ -30,6 +30,10 @@ mp_interests <- read.fst("data/mp_register_combined.fst") %>%
   data.frame() %>%
   select(c("Party", "Description", "URL_end"))
 
+# load R script with a slightly amended version of the
+# director search function (that returns NULL with 0 results)
+source("CompaniesHouse_mod.R")
+
 #########################
 # define layout
 #########################
@@ -132,34 +136,46 @@ server <- function(input, output) {
     # own API key (for free!) by creating an account
     # and registering an "application" here:
     # https://developer-specs.company-information.service.gov.uk/guides/authorisation
-  mkey <- "2o_3Jar_scUk6Uxefp-ArOuNymv5OHwbEEyK5jRC"
+   mkey <- "2o_3Jar_scUk6Uxefp-ArOuNymv5OHwbEEyK5jRC"
 
 
     # run code if button is clicked
     results <- eventReactive(input$button, {
 
+      if (is.null(DirectorSearch_limit_mod(input$ind_name, mkey))){
+        return(NULL)
+      }
+
+      else {
+
       if (input$year=="NA" & input$month=="NA"){
         # if both missing, no filter
-        temp <- CompaniesHouse::DirectorSearch_limit(input$ind_name, mkey)
+        temp <- DirectorSearch_limit_mod(input$ind_name, mkey)
       } else if (input$year=="NA" & input$month!="NA"){
         # year missing
-        temp <- CompaniesHouse::DirectorSearch_limit(input$ind_name, mkey) %>%
+        temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
           filter(month.of.birth==as.numeric(input$month))
       } else if (input$year!="NA" & input$month=="NA"){
         # month missing
-        temp <- CompaniesHouse::DirectorSearch_limit(input$ind_name, mkey) %>%
+        temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
           filter(year.of.birth==as.numeric(input$year))
       } else {
-        temp <- CompaniesHouse::DirectorSearch_limit(input$ind_name, mkey) %>%
+        temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
           filter(month.of.birth==as.numeric(input$month) &
                    year.of.birth==as.numeric(input$year))
       }
+        if (nrow(temp)==0){
+          return(NULL)
+        }
+        else{
 
       temp %>% mutate(address.snippet = addess.snippet,
                       temp.link = paste0("https://find-and-update.company-information.service.gov.uk/officers/",
                                          director.id, "/appointments"),
                       director.name = paste0("<a target='_blank' href='", temp.link,"'>", person.name, "</a>")) %>%
         select(director.name, month.of.birth, year.of.birth, address.snippet, director.id)
+        }
+      }
 
     })
 
@@ -172,13 +188,25 @@ server <- function(input, output) {
         escape=FALSE)
         })
 
-    count1 <- reactive({ nrow(results())})
+    count1 <- reactive({
+      if (is.null(results())){
+        0
+      }
+      else {
+      nrow(results())
+        }
+      })
 
     output$tab1_text <- renderText({
         paste("There are", count1(), "individual(s) with this name/DOB in Companies House")
     })
 
     results2 <- reactive({
+
+      if (is.null(results())){
+        NULL
+      }
+      else{
 
         director_ids <-  results()$director.id
         temp <- list()
@@ -187,11 +215,15 @@ server <- function(input, output) {
         }
 
         do.call("rbind", temp) %>% tibble::remove_rownames()
-
+      }
     })
 
     # render results as table
     output$ind_company_results <- DT::renderDataTable({
+      if (is.null(results2())){
+        DT::datatable(results2())
+      }
+      else {
       DT::datatable(
         results2() %>%
             mutate(company.name = comapny.name,
@@ -202,9 +234,17 @@ server <- function(input, output) {
       escape=FALSE, # don't escape the HTML for the hyperlink
       rownames= FALSE
       )
+      }
         })
 
-    count2 <- reactive({ nrow(results2())})
+    count2 <- reactive({
+      if (is.null(results2())){
+        0
+        }
+      else {
+        nrow(results2())
+      }
+        })
 
     output$tab2_text <- renderText({
         paste("There are", count2(), "companies linked to this individual(s) in Companies House")
@@ -232,9 +272,14 @@ server <- function(input, output) {
     results3 <- reactive({
       search_terms <- c(input$ind_name, company_names())
       search_terms_regex <- paste(search_terms, collapse="|")
-      temp <- donations[stringr::str_detect(toupper(donations$DonorName), toupper(search_terms_regex)),]
+      temp <- donations[stringr::str_detect(toupper(donations$DonorName), toupper(search_terms_regex)),] %>%
+        select(RegulatedEntityName, DonorName,
+               Value, DonationType, AcceptedDate, ReportedDate)
+      if (nrow(temp)==0){
+        return(temp)
+      }
+      else {
       matches <- stringr::str_extract_all(tolower(temp$DonorName), tolower(search_terms_regex))
-      temp <- temp %>% select(RegulatedEntityName, DonorName, Value, DonationType, AcceptedDate, ReportedDate)
 
       for (i in 1:length(matches)){
         for (j in 1:length(matches[[i]])){
@@ -245,6 +290,7 @@ server <- function(input, output) {
       }
 
       return(temp)
+      }
     })
 
 
@@ -294,6 +340,10 @@ server <- function(input, output) {
         search_terms_regex <- paste(search_terms, collapse="|")
 
         temp <- mp_interests[stringr::str_detect(toupper(mp_interests$Description), toupper(search_terms_regex)),]
+        if (nrow(temp)==0){
+          return(temp)
+        }
+        else {
 
         matches <- stringr::str_extract_all(tolower(temp$Description), tolower(search_terms_regex))
 
@@ -315,6 +365,7 @@ server <- function(input, output) {
         temp <- temp %>% select(MP, Party, URL, Description)
         rownames(temp) <- NULL
         return(temp)
+        }
       })
 
 

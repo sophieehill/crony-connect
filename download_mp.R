@@ -13,7 +13,7 @@ library(fst)
 library(cronR)
 library(shinyFiles)
 library(git2r)
-cron_rstudioaddin()
+# cron_rstudioaddin()
 
 base_url <- "https://www.membersinterests.org.uk/api/v1/commons/registers"
 
@@ -21,11 +21,13 @@ temp <- httr::GET(base_url)
 
 # save list of available registers
 current_reg_list <- temp %>%
-  content("text") %>%
+  httr::content("text") %>%
   fromJSON(flatten=TRUE) %>%
   as.data.frame() %>%
   select(registerDate) %>%
   mutate(registerDate = substr(registerDate, 1, 10))
+
+sort(current_reg_list$registerDate)
 
 reg_list <- current_reg_list$registerDate
 
