@@ -15,7 +15,9 @@ library(tibble)
 library(data.table)
 # library(devtools)
 # devtools::install_github("MatthewSmith430/CompaniesHouse")
-library(CompaniesHouse)
+# library(CompaniesHouse)
+# no longer need this package as I've manually
+# sourced the two functions I need
 # load electoral commission donations data
 # (originally I tried to scrape results as needed
 # using the search box and RSelenium. However, unclear
@@ -87,13 +89,17 @@ ui <- fluidPage(
             tabPanel("ID",
               h4(textOutput("tab1_text")),
               br(),
-              DT::dataTableOutput("ind_name_results")),
+              DT::dataTableOutput("ind_name_results") %>%
+                shinycssloaders::withSpinner()
+              ),
 
             # tab 2: Companies House - Companies
             tabPanel("Companies",
               h4(textOutput("tab2_text")),
               br(),
-              DT::dataTableOutput("ind_company_results")),
+              DT::dataTableOutput("ind_company_results") %>%
+                shinycssloaders::withSpinner()
+              ),
 
             # tab 3: Electoral Commission - Donations
             tabPanel("Donations",
@@ -155,14 +161,16 @@ server <- function(input, output) {
         # year missing
         temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
           filter(month.of.birth==as.numeric(input$month))
+
       } else if (input$year!="NA" & input$month=="NA"){
         # month missing
         temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
           filter(year.of.birth==as.numeric(input$year))
+
       } else {
         temp <- DirectorSearch_limit_mod(input$ind_name, mkey) %>%
-          filter(month.of.birth==as.numeric(input$month) &
-                   year.of.birth==as.numeric(input$year))
+          filter((month.of.birth==as.numeric(input$month) &
+                   year.of.birth==as.numeric(input$year)))
       }
         if (nrow(temp)==0){
           return(NULL)
@@ -178,7 +186,6 @@ server <- function(input, output) {
       }
 
     })
-
 
 
     # render results as table
@@ -198,7 +205,13 @@ server <- function(input, output) {
       })
 
     output$tab1_text <- renderText({
-        paste("There are", count1(), "individual(s) with this name/DOB in Companies House")
+      if( lengths(strsplit(input$ind_name, "\\W+"))<2 ){
+        paste("Please enter a full name ('FIRSTNAME LASTNAME') to search the Companies House database")
+      }
+      else {
+
+        paste("There are", count1(), "individual(s) with this name/DOB in Companies House (max. 20 results).")
+      }
     })
 
     results2 <- reactive({
@@ -211,7 +224,7 @@ server <- function(input, output) {
         director_ids <-  results()$director.id
         temp <- list()
         for (id in director_ids){
-            temp[[id]] <- CompaniesHouse::indiv_ExtractDirectorsData(id, mkey)
+            temp[[id]] <- indiv_ExtractDirectorsData_mod(id, mkey)
         }
 
         do.call("rbind", temp) %>% tibble::remove_rownames()
@@ -247,8 +260,15 @@ server <- function(input, output) {
         })
 
     output$tab2_text <- renderText({
+      if( lengths(strsplit(input$ind_name, "\\W+"))<2 ){
+        paste("Please enter a full name ('FIRSTNAME LASTNAME') to search the Companies House database")
+      }
+      else {
+
         paste("There are", count2(), "companies linked to this individual(s) in Companies House")
+      }
     })
+
 
     # clean up company names
     company_names <- reactive({
@@ -285,7 +305,7 @@ server <- function(input, output) {
         for (j in 1:length(matches[[i]])){
           temp$DonorName[i] <- stringr::str_replace_all(toupper(temp$DonorName[i]),
                                                           toupper(matches[[i]][j]),
-                                                          paste0("<mark>", toupper(matches[[i]][j]), "</mark>"))
+                                                          paste0("<mark><b>", toupper(matches[[i]][j]), "</b></mark>"))
         }
       }
 
