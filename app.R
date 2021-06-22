@@ -123,7 +123,7 @@ ui <- fluidPage(
               br(),
               DT::dataTableOutput("mp_interests") %>%
                 shinycssloaders::withSpinner()
-            )
+              )
             )
         )
 
@@ -200,7 +200,15 @@ server <- function(input, output) {
     output$ind_name_results <- DT::renderDataTable({
       DT::datatable(
         results(),
-        escape=FALSE)
+        escape=FALSE,
+        extensions = 'Buttons', options = list(
+          dom = 'Bfrtip',
+          buttons =
+            list(list(
+              extend = 'collection',
+              buttons = c('csv', 'pdf'),
+              text = 'Download'
+            ))))
         })
 
     count1 <- reactive({
@@ -240,7 +248,8 @@ server <- function(input, output) {
     })
 
     # render results as table
-    output$ind_company_results <- DT::renderDataTable({
+    output$ind_company_results <- DT::renderDataTable(
+      server=FALSE,{
       if (is.null(results2())){
         DT::datatable(results2())
       }
@@ -253,7 +262,15 @@ server <- function(input, output) {
             select(company.name, directors, start.date, end.date,
                    occupation, role, birth.year, birth.month, company.id),
       escape=FALSE, # don't escape the HTML for the hyperlink
-      rownames= FALSE
+      rownames= FALSE,
+      extensions = 'Buttons', options = list(
+        dom = 'Bfrtip',
+        buttons =
+          list(list(
+            extend = 'collection',
+            buttons = c('csv', 'pdf'),
+            text = 'Download'
+          )))
       )
       }
         })
@@ -290,7 +307,12 @@ server <- function(input, output) {
         filler_word_regex <- paste0("\\b", filler_word, "\\b")
         co_names <- gsub(filler_word_regex, "", co_names, ignore.case=T)
       }
+
+      # and also remove any words in parentheses:
+      co_names <- gsub("\\s*\\([^\\)]+\\)","", co_names, ignore.case=T)
+
       return(co_names)
+
     })
 
     results3 <- reactive({
@@ -320,8 +342,19 @@ server <- function(input, output) {
 
 
      # render results as table
-      output$donations_results <- DT::renderDataTable({
-          DT::datatable(results3(), rownames= FALSE, escape=FALSE)
+      output$donations_results <- DT::renderDataTable(
+        server = FALSE, {
+          DT::datatable(results3(),
+                        rownames= FALSE,
+                        escape=FALSE,
+                        extensions = 'Buttons', options = list(
+                          dom = 'Bfrtip',
+                          buttons =
+                            list(list(
+                              extend = 'collection',
+                              buttons = c('csv', 'pdf'),
+                              text = 'Download'
+                            ))))
       })
 
       count3 <- reactive({
@@ -394,10 +427,20 @@ server <- function(input, output) {
 
 
       # render results as table
-      output$mp_interests <- DT::renderDataTable({
+      output$mp_interests <- DT::renderDataTable(
+        # to download ALL results
+        server=FALSE,{
         DT::datatable(
           results4(),
-          escape = FALSE, rownames= FALSE)
+          escape = FALSE, rownames= FALSE,
+          extensions = 'Buttons', options = list(
+            dom = 'Bfrtip',
+            buttons =
+              list(list(
+                extend = 'collection',
+                buttons = c('csv', 'pdf'),
+                text = 'Download'
+              ))))
       })
 
       count4 <- reactive({
@@ -414,6 +457,7 @@ server <- function(input, output) {
       })
 
 }
+
 
 
 # Run the application
