@@ -4,30 +4,58 @@
 # open the addin
 library(cronR)
 library(shinyFiles)
-cron_rstudioaddin()
+# cron_rstudioaddin()
 
 library(fst)
 library(tidyverse)
 
+# find the most recent record in the data I've already downloaded
+current_data <- fst::read.fst("data/donations_data.fst")
+# the table is sorted by "AcceptedDate"
+# so let's grab the top value
+most_recent <- current_data[1,"AcceptedDate"]
+most_recent_ID <- current_data[1, "ECRef"]
+# now let's search the database for any more recent entries
+year <- substr(most_recent, 7, 10)
+month <- substr(most_recent, 4, 5)
+day <- substr(most_recent, 1, 2)
+date_urlformat <- paste(year, month, day, sep="-")
+
+test_link1 <- "http://search.electoralcommission.org.uk/api/csv/Donations?start={start}&rows={pageSize}&query=&sort=AcceptedDate&order=desc&et=pp&et=ppm&et=tp&et=perpar&et=rd&date=Reported&from="
+
+test_link2 <- "&to=&rptPd=&prePoll=false&postPoll=true&register=gb&register=ni&register=none&isIrishSourceYes=true&isIrishSourceNo=true&includeOutsideSection75=true"
+
+test_link3 <- paste0(test_link1, date_urlformat, test_link2)
+
+download.file(test_link3, destfile="/Users/sophiehill/Google-Drive/Harvard/Tory-networks/crony-connect/scrap/test.csv", mode="wb")
+
+test <- read.csv("scrap/test.csv")
+
+  if (test$ECRef[1] == most_recent_ID){
+
+  print(paste0("No new results. Most recent record on: ",
+               as.Date(most_recent, format="%d/%m/%Y"),
+               ". Last checked: ", Sys.time()))
+  } else {
+
 # this is the URl for a blank search on the
 # electoral commission website
 # which returns all results
+    new_data <- rbind(test, current_data) %>%
+      select(ECRef, RegulatedEntityName, Value, AcceptedDate,
+             DonorName, DonorStatus, RegulatedDoneeType,
+             DonationType, NatureOfDonation, ReportedDate)
+    # remove duplicates
+    # (since the "new data" starts on the most recent day of the
+    # old data, so records from that day will be duplicated)
+        new_data <- new_data[!duplicated(new_data$ECRef),]
 
-elec_url <- "http://search.electoralcommission.org.uk/api/csv/Donations?start={start}&rows={pageSize}&query=&sort=AcceptedDate&order=desc&et=pp&et=ppm&et=tp&et=perpar&et=rd&date=Reported&from=&to=&rptPd=&prePoll=true&postPoll=true&register=gb&register=ni&register=none&period=3765&period=3767&period=3718&period=3720&period=3714&period=3716&period=3710&period=3712&period=3706&period=3708&period=3702&period=3704&period=3698&period=3700&period=3676&period=3695&period=3604&period=3602&period=3600&period=3598&period=3594&period=3596&period=3578&period=3580&period=3574&period=3576&period=3570&period=3572&period=3559&period=3524&period=3567&period=3522&period=3520&period=3518&period=2513&period=2507&period=2509&period=2511&period=1485&period=1487&period=1480&period=1481&period=1477&period=1478&period=1476&period=1474&period=1471&period=1473&period=1466&period=463&period=1465&period=460&period=447&period=444&period=442&period=438&period=434&period=409&period=427&period=403&period=288&period=302&period=304&period=300&period=280&period=218&period=206&period=208&period=137&period=138&period=128&period=73&period=69&period=61&period=63&period=50&period=40&period=39&period=5&isIrishSourceYes=true&isIrishSourceNo=true&includeOutsideSection75=true"
 
-# save .csv file
-download.file(elec_url, destfile="/Users/sophiehill/Google-Drive/Harvard/Tory-networks/crony-connect/data/donations_data.csv", mode="wb")
-
-temp <- read.csv("data/donations_data.csv")
-names(temp)
-temp <- temp %>% select(RegulatedEntityName, Value, AcceptedDate, DonorName, DonorStatus, RegulatedDoneeType, DonationType, NatureOfDonation, ReportedDate)
 
 # use fst instead of csv
-write.fst(temp, "data/donations_data.fst", 100)
-# write.csv(temp, "data/donations_data.csv")
+write.fst(new_data, "data/donations_data.fst", 100)
 
 # save zipped file
-# zip("donations_data.zip", "data/donations_data.csv")
 
 # use git2r to push to git automatically
 # also need to install libssh2 and libgit2:
@@ -35,7 +63,14 @@ write.fst(temp, "data/donations_data.fst", 100)
 # brew install libssh2
 # brew install libgit2
 # install.packages("git2r", type="source", configure.vars="autobrew=yes")
+install.packages("git2r",
+                 type = "source",
+                 configure.vars='LIBS=-L/usr/local/Cellar/libssh2/1.9.0_1/lib'
+)
 library(git2r)
+# check that SSH is enabled:
+git2r::libgit2_features()
+
 
 # first select file to push
 git2r::add(repo = getwd(), path = "donations_data.fst")
@@ -47,3 +82,5 @@ git2r::commit(repo = getwd(),
 git2r::pull(repo = getwd(), credentials = NULL)
 # then push this change
 git2r::push(object = getwd())
+
+}

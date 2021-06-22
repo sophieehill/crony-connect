@@ -14,6 +14,8 @@ library(cronR)
 library(shinyFiles)
 library(git2r)
 # cron_rstudioaddin()
+# cron_ls()
+
 
 base_url <- "https://www.membersinterests.org.uk/api/v1/commons/registers"
 

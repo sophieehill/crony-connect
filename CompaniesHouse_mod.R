@@ -2,6 +2,14 @@
 # with minor modifications by me (SH)
 # https://github.com/MatthewSmith430/CompaniesHouse/tree/master/R
 
+CheckNulls <- function(x) {
+  if(is.null(x)==TRUE) {
+    return(NA)
+  } else {
+    return(x)
+  }
+}
+
 DirectorSearch_limit_mod <- function(director_name,mkey) {
   firmNAME<-gsub(" ", "+",director_name)
   firmNAME<-gsub("&","%26",firmNAME)
