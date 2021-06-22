@@ -36,6 +36,14 @@ mp_interests <- read.fst("data/mp_register_combined.fst") %>%
 # director search function (that returns NULL with 0 results)
 source("CompaniesHouse_mod.R")
 
+# save list of company filler words
+# we will remove these from company names before
+# searching
+company_filler_words <- c("limited", "ltd", "llp", "partners",
+                          "associates", "group", "foundation",
+                          "the", "of", "and", "&", "holdings",
+                          "holding")
+
 #########################
 # define layout
 #########################
@@ -270,23 +278,19 @@ server <- function(input, output) {
     })
 
 
+
     # clean up company names
     company_names <- reactive({
 
-        temp <- gsub("Limited", "", results2()$comapny.name, ignore.case=T)
-        temp <- gsub("\\s*\\([^\\)]+\\)","", temp, ignore.case=T)
-        temp <- gsub("llp","", temp, ignore.case=T)
-        temp <- gsub("partners","", temp, ignore.case=T)
-        temp <- gsub("associates","", temp, ignore.case=T)
-        temp <- gsub("holdings","", temp, ignore.case=T)
-        temp <- gsub("group","", temp, ignore.case=T)
-        temp <- gsub("foundation","", temp, ignore.case=T)
-        temp <- gsub("the","", temp, ignore.case=T)
-        temp <- gsub("of","", temp, ignore.case=T)
-        temp <- gsub("and","", temp, ignore.case=T)
-        temp <- gsub("&","", temp, ignore.case=T)
-        temp <- gsub("ltd","", temp, ignore.case=T)
+      co_names <- results2()$comapny.name
 
+      for (filler_word in company_filler_words){
+        # add regex to only match WHOLE WORDS
+        # so that names like "BHOLDING" will not be removed
+        filler_word_regex <- paste0("\\b", filler_word, "\\b")
+        co_names <- gsub(filler_word_regex, "", co_names, ignore.case=T)
+      }
+      return(co_names)
     })
 
     results3 <- reactive({
