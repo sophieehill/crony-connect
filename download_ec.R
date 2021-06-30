@@ -2,15 +2,19 @@
 # install.packages("cronR")
 # install.packages("shinyFiles")
 # open the addin
-library(cronR)
-library(shinyFiles)
+# library(cronR)
+# library(shinyFiles)
 # cron_rstudioaddin()
 
 library(fst)
 library(tidyverse)
 
+# save static working directory here
+# so that cron can get the file paths correct
+static_wd <- "/Users/sophiehill/Google-Drive/Harvard/Tory-networks/crony-connect/"
+
 # find the most recent record in the data I've already downloaded
-current_data <- fst::read.fst("data/donations_data.fst")
+current_data <- fst::read.fst(paste0(static_wd, "data/donations_data.fst"))
 # the table is sorted by "AcceptedDate"
 # so let's grab the top value
 most_recent <- current_data[1,"AcceptedDate"]
@@ -27,9 +31,9 @@ test_link2 <- "&to=&rptPd=&prePoll=false&postPoll=true&register=gb&register=ni&r
 
 test_link3 <- paste0(test_link1, date_urlformat, test_link2)
 
-download.file(test_link3, destfile="/Users/sophiehill/Google-Drive/Harvard/Tory-networks/crony-connect/scrap/test.csv", mode="wb")
+download.file(test_link3, destfile=paste0(static_wd, "scrap/test.csv"), mode="wb")
 
-test <- read.csv("scrap/test.csv")
+test <- read.csv(paste0(static_wd, "scrap/test.csv"))
 
   if (test$ECRef[1] == most_recent_ID){
 
@@ -53,7 +57,7 @@ test <- read.csv("scrap/test.csv")
 
 
 # use fst instead of csv
-write.fst(new_data, "data/donations_data.fst", 100)
+write.fst(new_data, paste0(static_wd, "data/donations_data.fst"), 100)
 
 # save zipped file
 
@@ -63,24 +67,21 @@ write.fst(new_data, "data/donations_data.fst", 100)
 # brew install libssh2
 # brew install libgit2
 # install.packages("git2r", type="source", configure.vars="autobrew=yes")
-install.packages("git2r",
-                 type = "source",
-                 configure.vars='LIBS=-L/usr/local/Cellar/libssh2/1.9.0_1/lib'
-)
+# install.packages("git2r", type = "source",configure.vars='LIBS=-L/usr/local/Cellar/libssh2/1.9.0_1/lib')
 library(git2r)
 # check that SSH is enabled:
-git2r::libgit2_features()
+# git2r::libgit2_features()
 
 
 # first select file to push
-git2r::add(repo = getwd(), path = "donations_data.fst")
+git2r::add(repo = static_wd, path = "data/donations_data.fst")
 # then commit changes
-git2r::commit(repo = getwd(),
+git2r::commit(repo = static_wd,
               message = paste0("Updated on : ", Sys.time())
 )
 # then pull any changes (for safety)
-git2r::pull(repo = getwd(), credentials = NULL)
+git2r::pull(repo = static_wd, credentials = NULL)
 # then push this change
-git2r::push(object = getwd())
+git2r::push(object = static_wd)
 
 }

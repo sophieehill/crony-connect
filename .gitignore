@@ -3,5 +3,4 @@
 .RData
 .Ruserdata
 scrap/
-mp_register/
-api_key.R
+*.log
